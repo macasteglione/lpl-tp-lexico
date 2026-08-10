@@ -37,7 +37,7 @@ NUM HEXA|DECIMAL|BINARIO
 
 %%
 
-{HEXA}  { printf("Es hexa %s\n", yytext); }
+{HEXA}  { if (yyleng <= 3) { modo = ZP; printf("Modo ZP %d", modo); } else { modo = ABS; printf("Modo ABS %d", modo); } }
 {DECIMAL} { printf("Es decimal %02X", atoi(yytext)); }
 {BINARIO} { printf("Es binario %02X", (int)(strtol(yytext, NULL, 2))); }
 
@@ -55,10 +55,15 @@ BRK { printf("00\tBRK\n"); }
 %%
 
 void imprimir_linea() {
-    int opcode = decodificar(mne, modo);
-    printf("%02X MODO\n", opcode); 
-    modo = NA; 
-    mne = NA;
+    if (mne == NA) {
+        fprintf(stderr, "Error: Falta mnemonico\n");
+        modo = NA;
+    } else {
+        int opcode = decodificar(mne, modo);
+        printf("%02X %d\n", opcode, modo); 
+        modo = NA; 
+        mne = NA;
+    } 
 }
 
 int decodificar(enum mne_type mne, enum modo_type modo) {
@@ -72,7 +77,10 @@ int yywrap(void) {
 int main(int argc, char **argv) {
     if (argc > 1) {
         FILE *f = fopen(argv[1], "r");
-        if (!f) { perror("No se pudo abrir el archivo"); return 1; }
+        if (!f) { 
+            perror("No se pudo abrir el archivo"); 
+            return 1; 
+        }
         yyin = f;
     }
     /* Si no se pasa el archivo lee de la entrada estandar (stdin) */
