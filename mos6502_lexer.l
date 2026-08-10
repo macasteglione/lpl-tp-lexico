@@ -1,24 +1,73 @@
 %{
+
 #include <stdio.h>
+#define NA -1
 
+enum mne_type {
+    LDA, STA, BRK
+};
 
-int linea = 1;
+enum modo_type {
+    INM, ZP, ABS
+};
+
+enum mne_type mne = NA;
+enum modo_type modo = NA;
+
+// INM, ZP, ABS
+unsigned char opcodes[3][3] = {
+              {0xa9, 0xa5, 0xad}, //LDA
+              {NA, 0x85, 0x8d},  //STA
+              {0x0, 0x0, 0x0},  //BRK
+            };
+
+void imprimir_linea();
+int decodificar(enum mne_type mne, enum modo_type modo);
 
 %}
 
 /* Opciones para que no generes funciones no utilizadas y evitar warnings */
 %option noinput nounput
 
-DIGITO	[0-9]
+DECIMAL	[0-9]+
+HEXA $[0-9A-Fa-f]+
+BINARIO %[01]+
+
+NUM HEXA|DECIMAL|BINARIO
 
 %%
 
-{DIGITO}+		{ printf("\n<%s> Parece que es un número con muchos dígitos\n", yytext); }
-.|\n    		{ ECHO; }
+{HEXA}  { printf("Es hexa %s\n", yytext); }
+{DECIMAL} { printf("Es decimal %02X", atoi(yytext)); }
+{BINARIO} { printf("Es binario %02X", (int)(strtol(yytext, NULL, 2))); }
+
+BRK { printf("00\tBRK\n"); }
+
+(?i:LDA)  { mne = LDA; }
+(?i:STA)  { mne = STA; }
+
+#{HEXA}  { modo = INM; }
+\n  { imprimir_linea(); }
+
+[ \t]+  { }
+;.* { }
 
 %%
 
-int yywrap(void) { return 1; }
+void imprimir_linea() {
+    int opcode = decodificar(mne, modo);
+    printf("%02X MODO\n", opcode); 
+    modo = NA; 
+    mne = NA;
+}
+
+int decodificar(enum mne_type mne, enum modo_type modo) {
+    return opcodes[mne][modo];
+}
+
+int yywrap(void) { 
+    return 1; 
+}
 
 int main(int argc, char **argv) {
     if (argc > 1) {
