@@ -55,18 +55,17 @@ BRK { printf("00\tBRK\n"); }
 %%
 
 void imprimir_linea() {
-    if (mne == NA) {
-        fprintf(stderr, "Error: Falta mnemonico\n");
-        modo = NA;
-    } else {
-        int opcode = decodificar(mne, modo);
-        printf("%02X %d\n", opcode, modo); 
-        modo = NA; 
-        mne = NA;
-    } 
+    int opcode = decodificar(mne, modo);
+    if (opcode == NA)
+        fprintf(stderr, "Error: combinacion invalida de mnemonico y modo\n");
+    else printf("%02X %d\n", opcode, modo); 
+
+    modo = NA; 
+    mne = NA;
 }
 
 int decodificar(enum mne_type mne, enum modo_type modo) {
+    if (mne == NA) return NA;
     return opcodes[mne][modo];
 }
 
